@@ -95,12 +95,12 @@ function armLobbyTimer(g, ms) {
 async function onLobbyTimeout(g) {
   g.lobbyTimer = null;
   if (games.get(g.group) !== g || g.phase !== 'lobby') return;
-  if (g.players.length === 0) {
-    games.delete(g.group);
-    await say(g.group, '⌛ Lobi Werewolf dihapus karena tidak ada yang bergabung.');
-    return;
-  }
-  await say(g.group, `⌛ Waktu join habis. Lobi tetap terbuka (${g.players.length} pemain), ketik *!ww start* untuk mulai.`);
+  const count = g.players.length;
+  for (const p of g.players) playerGame.delete(key(p.jid));
+  games.delete(g.group);
+  await say(g.group, count === 0
+    ? '⌛ Lobi Werewolf dihapus karena tidak ada yang bergabung.'
+    : `⌛ Waktu join habis, lobi Werewolf ditutup (${count} pemain). Buat lagi dengan *!ww create*.`);
 }
 
 // Perintah lobi di grup: !ww create | join | leave | start | status | stop
