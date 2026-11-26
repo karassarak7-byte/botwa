@@ -1,15 +1,16 @@
 # Bot WA (bot-wa)
 - Entry: index.js (ESM, "type": "module"). Start: node index.js (MAIN_FILE=index.js). Panel Nano, Node 25 image, port 10775 (PORT/SERVER_PORT).
-- File: database.js (users.json: energi, claim, spin, setEnergy, findUser, markGreeted, countCall = hitungan panggilan, antrean tulis atomik), patch-fps.mjs (patch library sound sticker; jalankan setelah npm install), werewolf.js (game Werewolf, lobi 60 detik +30 detik per join), tebakkata.js (tebak kata, sesi 5 menit).
+- File: database.js (users.json: energi, claim, spin, setEnergy, findUser, markGreeted, countCall = hitungan panggilan, antrean tulis atomik), patch-fps.mjs (patch library sound sticker; jalankan setelah npm install), werewolf.js (game Werewolf, lobi 60 detik +30 detik per join), tebakkata.js (tebak kata, sesi 5 menit), ai.js (cache grup + Gemini).
 - Paket: @xbibzlibrary/whatsbibz 2.1.0 (fork Baileys), qrcode, pino, sharp 0.32.6 (dipakai juga untuk stiker brat). ffmpeg 5.1.9 di /usr/bin. Font: DejaVu.
 - Install ulang: npm install, lalu node patch-fps.mjs.
 - Login: QR di terminal dan halaman http://IP:10775/. Session di folder auth.
 - makeWASocket: autoFollowChannel false. Pesan fromMe hanya diproses di self-chat. Grup dan chat orang lain diabaikan.
-- Perintah (prefix !): !menu/!help, !ping, !energi/!cek, !claim (+15, 1 jam), !sticker/!s (3 energi, refund jika gagal), !brat <teks> (2 energi, refund jika gagal, maks 100 karakter, latar putih, teks hitam, rata kiri, sharp SVG + blur 1, WebP 512x512), !spin, !tebak, !jawab, !clue, !menyerah.
+- Perintah (prefix !): !menu/!help, !ping, !energi/!cek, !claim (+15, 1 jam), !sticker/!s (3 energi, refund jika gagal), !brat <teks> (2 energi, refund jika gagal, maks 100 karakter, latar putih, teks hitam), !spin, !tebak, !jawab, !clue, !menyerah.
+- AI (ai.js): AI_API_KEY di .env (Gemini gemini-2.5-flash, REST via fetch, tanpa paket). groupChatCache: 30 pesan teks terakhir per grup (FIFO), dicatat di listener messages.upsert. !ai/!tanya (3 energi, bisa balas pesan), !rangkum/!tldr [jumlah] (5 energi, grup saja, min 5, maks 30). Gagal API = refund otomatis. Belum diuji live (jaringan node EAI_AGAIN).
 - Panggilan ke bot (event call): panggilan pertama dibalas peringatan, berikutnya diblokir (rejectCall, updateBlockStatus).
 - Werewolf: !ww create/join/leave/start/status/stop, !vote, aksi malam via DM. Hadiah +20.
 - Energi awal 30, maks 150. Cooldown 2 detik per pengguna.
 - Pengendali: OWNER_NUMBERS (6289692853559). Tanpa cooldown dan biaya sticker. Perintah !setenergi, !cekuser.
-- Belum dibuat: !tt (TikTok) dan !ytmp3 (YouTube). Rencana: tikwm API untuk TikTok; @distube/ytdl-core + ffmpeg untuk audio; yt-search untuk pencarian. Dibuat setelah jaringan node normal.
-- Gangguan jaringan node: DNS EAI_AGAIN (mmg.whatsapp.net, registry.npmjs.org, tikwm, youtube) dan koneksi WA sering putus kode 408. Bukan bug kode. Ke support KiosPanel.
+- Belum dibuat: !tt (TikTok) dan !ytmp3 (YouTube). Rencana: tikwm API untuk TikTok; @distube/ytdl-core + ffmpeg untuk audio; yt-search untuk pencarian.
+- Gangguan jaringan node: DNS EAI_AGAIN (WA, npm, Gemini, tikwm, youtube) dan koneksi WA sering putus kode 408. Bukan bug kode. Ke support KiosPanel.
 - Log [debug] di index.js masih aktif. Hapus setelah stabil.

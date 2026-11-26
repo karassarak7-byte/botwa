@@ -1,6 +1,6 @@
 {
   "1670842970193@lid": {
-    "energy": 20,
+    "energy": 0,
     "lastClaim": 1795676461567,
     "createdAt": 1795676447707,
     "greeted": true
@@ -178,6 +178,12 @@
     "energy": 30,
     "lastClaim": 0,
     "createdAt": 1795696795134,
+    "greeted": true
+  },
+  "145878916546808@lid": {
+    "energy": 30,
+    "lastClaim": 0,
+    "createdAt": 1795702224850,
     "greeted": true
   }
 }

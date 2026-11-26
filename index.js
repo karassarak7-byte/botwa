@@ -9,6 +9,7 @@ import { promisify } from 'node:util';
 import { startGame, takeClue, guess, giveUp, categories, prizeFor, formatClues } from './tebakkata.js';
 import { initWerewolf, handleWW, handleVote, handleWWDM, WW_DM_CMDS } from './werewolf.js';
 import { countCall, markGreeted } from './database.js';
+import { askAI, groupChatCache, recordGroupMessage, getRecentMessages } from './ai.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -153,35 +154,58 @@ function explainError(e) {
 }
 
 function buildMenu(energy) {
-  return `*🤖 MENU BOT*
-Sisa energi kamu: *${energy} / ${MAX_ENERGY} ⚡*
+  return `╭━━━━━━━━━━━━━━━━━━━╮
+   🤖  *MENU BOT*
+╰━━━━━━━━━━━━━━━━━━━╯
+⚡ Energi kamu: *${energy} / ${MAX_ENERGY}*
 
-_Perintah (awali dengan !)_
-• *!menu* / *!help* — tampilkan menu ini (gratis)
-• *!ping* — cek kecepatan bot (gratis)
-• *!energi* / *!cek* — lihat energi dan status klaim (gratis)
-• *!claim* — +15 ⚡, sekali tiap 1 jam (gratis)
-• *!sticker* / *!s* — video jadi sound sticker atau foto jadi sticker, biaya *${STICKER_COST} ⚡* (caption atau balas video/foto, video maks ${STICKER_MAX_SECONDS} detik dan wajib ada audio, ukuran maks 2 MB)
-• *!spin <jumlah>* / *!spin all* — judi energi, biaya = taruhan
-• *!tebak [kategori]* — tebak kata (hewan, tempat, negara, buah, profesi, benda), hadiah 20 ⚡ (gratis)
-• *!jawab <jawaban>* — jawab tebakan
-• *!clue* — buka clue berikutnya, hadiah turun 20% tiap clue
-• *!menyerah* — akhiri tebakan tanpa hadiah
+┏━ 📌 *UMUM* _(gratis)_
+┃ • !menu / !help
+┃ • !ping
+┃ • !energi / !cek
+┃ • !claim — +15 ⚡ tiap 1 jam
+┗━━━━━━━━━━━━━━━━━━━
 
-*🎨 STIKER TEKS*
-• *!brat <teks>* — stiker teks latar putih, biaya *2 ⚡* (maks 100 karakter)
+┏━ 🎞️ *STIKER*
+┃ • !sticker / !s — *${STICKER_COST} ⚡*
+┃   video (maks ${STICKER_MAX_SECONDS} dtk, wajib ada audio)
+┃   atau foto, ukuran maks 2 MB
+┃ • !brat <teks> — *2 ⚡*
+┃   stiker teks putih, maks 100 karakter
+┗━━━━━━━━━━━━━━━━━━━
 
-*🐺 WEREWOLF* (di grup)
-• *!ww create* — buka lobi (minimal 4 pemain)
-• *!ww join* / *!ww leave* — ikut atau keluar lobi
-• *!ww start* — mulai game, peran dikirim lewat chat pribadi
-• *!ww status* — fase dan daftar pemain
-• *!ww stop* — hentikan game
-• *!vote <nomor>* — voting saat sesi voting
-• Aksi malam lewat chat pribadi: *!kill*, *!infect*, *!cek*, *!heal*, *!shoot*, *!stab* <nomor>
-• Pemenang dapat +20 ⚡
+┏━ 🎲 *GAME TEBAK & JUDI*
+┃ • !spin <jumlah> / !spin all
+┃   judi energi, biaya = taruhan
+┃ • !tebak [kategori] — hadiah 20 ⚡ _(gratis)_
+┃   kategori: hewan, tempat, negara,
+┃   buah, profesi, benda
+┃ • !jawab <jawaban>
+┃ • !clue — hadiah turun 20% tiap clue
+┃ • !menyerah
+┗━━━━━━━━━━━━━━━━━━━
 
-_Batas energi ${MAX_ENERGY} ⚡. Jeda 2 detik antar perintah._`;
+┏━ 🧠 *AI & GRUP*
+┃ • !ai <pertanyaan> / !tanya — *3 ⚡*
+┃   bisa juga balas pesan lalu ketik !ai
+┃ • !rangkum [jumlah] / !tldr — *5 ⚡*
+┃   rangkum obrolan grup, default 30,
+┃   maks 30 pesan terakhir (khusus grup)
+┗━━━━━━━━━━━━━━━━━━━
+
+┏━ 🐺 *WEREWOLF* _(di grup)_
+┃ • !ww create — buka lobi (min 4 pemain)
+┃ • !ww join / !ww leave
+┃ • !ww start — peran dikirim lewat DM
+┃ • !ww status
+┃ • !ww stop
+┃ • !vote <nomor>
+┃ • Aksi malam lewat DM:
+┃   !kill !infect !cek !heal !shoot !stab <nomor>
+┃ • Pemenang dapat +20 ⚡
+┗━━━━━━━━━━━━━━━━━━━
+
+_Jeda 2 detik antar perintah • Batas energi ${MAX_ENERGY} ⚡_`;
 }
 
 // ---------- Stiker teks gaya brat ----------
@@ -249,6 +273,64 @@ async function handleBrat(sock, msg, jid, sender, args, cmd) {
     console.error('Brat gagal:', e?.message);
     await refundEnergy(sender, BRAT_COST).catch((err) => console.error('Refund gagal:', err));
     await reply(sock, msg, `Gagal membuat stiker teks: ${e?.message || 'kesalahan tidak diketahui'}\n${BRAT_COST} ⚡ sudah dikembalikan.`);
+  }
+}
+
+// ---------- AI dan rangkuman grup ----------
+const AI_COST = 3;              // biaya !ai / !tanya
+const RANGKUM_COST = 5;         // biaya !rangkum / !tldr
+const RANGKUM_DEFAULT = 30;
+const RANGKUM_MIN = 5;
+const RANGKUM_MAX = 30;
+const AI_SYSTEM = 'Jawab pertanyaan pengguna secara langsung, akurat, dan ringkas: maksimal 2-3 paragraf pendek agar nyaman dibaca di layar HP. Pakai bahasa Indonesia yang santai. Gunakan format WhatsApp: *tebal*, _miring_, dan poin-poin bila perlu. Jangan pakai heading markdown atau blok kode.';
+const RANGKUM_SYSTEM = 'Kamu merangkum obrolan grup. Tulis topik utama diskusi dalam poin-poin singkat, bahasa Indonesia santai dan mudah dibaca. Format WhatsApp: *tebal*, _miring_, poin dengan tanda "•". Jangan pakai heading markdown. Sebut nama orang bila relevan.';
+
+async function handleRangkum(sock, msg, jid, sender, args) {
+  if (!jid.endsWith('@g.us')) return reply(sock, msg, 'Perintah *!rangkum* hanya bisa dipakai di grup.');
+  let n = Number(args[0] ?? RANGKUM_DEFAULT);
+  if (!Number.isFinite(n)) n = RANGKUM_DEFAULT;
+  n = Math.min(RANGKUM_MAX, Math.max(RANGKUM_MIN, Math.floor(n)));
+  if ((groupChatCache.get(jid)?.length ?? 0) < RANGKUM_MIN) {
+    return reply(sock, msg, `Belum cukup pesan di grup ini untuk dirangkum (minimal ${RANGKUM_MIN} pesan sejak bot aktif). Energi tidak dipotong.`);
+  }
+  const messages = getRecentMessages(jid, n);
+  const spend = await spendEnergy(sender, RANGKUM_COST);
+  if (!spend.ok) {
+    return reply(sock, msg, `Energi kurang. Rangkuman butuh ${RANGKUM_COST} ⚡, sisa kamu ${spend.energy} ⚡.\nCoba *!claim* (gratis) atau *!spin*.`);
+  }
+  await reply(sock, msg, `Sedang merangkum ${messages.length} pesan terakhir... 📝`);
+  try {
+    const transcript = messages.map((m) => `[${m.senderName}]: ${m.text}`).join('\n');
+    const summary = await askAI(RANGKUM_SYSTEM, `Rangkum obrolan berikut:\n\n${transcript}`);
+    await sock.sendMessage(jid, { text: `📝 *Rangkuman ${messages.length} pesan terakhir*\n\n${summary}` }, { quoted: msg });
+  } catch (e) {
+    console.error('Rangkum gagal:', e?.code, e?.message);
+    await refundEnergy(sender, RANGKUM_COST).catch((err) => console.error('Refund gagal:', err));
+    await reply(sock, msg, `Gagal merangkum: ${e?.message || 'kesalahan tidak diketahui'}\n${RANGKUM_COST} ⚡ sudah dikembalikan.`);
+  }
+}
+
+async function handleAI(sock, msg, sender, args) {
+  const ctx = msg.message.extendedTextMessage?.contextInfo?.quotedMessage;
+  const quotedText = (ctx?.conversation || ctx?.extendedTextMessage?.text || ctx?.imageMessage?.caption || '').trim();
+  const question = args.join(' ').trim();
+  let prompt = '';
+  if (quotedText && question) prompt = `Pesan yang dibalas:\n"${quotedText}"\n\nPertanyaan: ${question}`;
+  else prompt = question || quotedText;
+  if (!prompt) {
+    return reply(sock, msg, 'Contoh: *!ai jelaskan cara kerja inflasi*\n(atau balas pesan dengan *!ai jelaskan maksudnya*)');
+  }
+  const spend = await spendEnergy(sender, AI_COST);
+  if (!spend.ok) {
+    return reply(sock, msg, `Energi kurang. Tanya AI butuh ${AI_COST} ⚡, sisa kamu ${spend.energy} ⚡.\nCoba *!claim* (gratis) atau *!spin*.`);
+  }
+  try {
+    const answer = await askAI(AI_SYSTEM, prompt);
+    await reply(sock, msg, answer);
+  } catch (e) {
+    console.error('AI gagal:', e?.code, e?.message);
+    await refundEnergy(sender, AI_COST).catch((err) => console.error('Refund gagal:', err));
+    await reply(sock, msg, `Gagal menjawab: ${e?.message || 'kesalahan tidak diketahui'}\n${AI_COST} ⚡ sudah dikembalikan.`);
   }
 }
 
@@ -503,6 +585,12 @@ async function handleMessage(sock, msg) {
       return handleSticker(sock, msg, jid, sender, owner);
     case 'brat':
       return handleBrat(sock, msg, jid, sender, args, '!brat');
+    case 'rangkum':
+    case 'tldr':
+      return handleRangkum(sock, msg, jid, sender, args);
+    case 'ai':
+    case 'tanya':
+      return handleAI(sock, msg, sender, args);
     case 'spin':
       return handleSpin(sock, msg, sender, args);
     case 'tebak':
@@ -609,6 +697,15 @@ async function start() {
   sock.ev.on('messages.upsert', ({ messages, type }) => {
     if (type !== 'notify') return;
     for (const msg of messages) {
+      // Catat pesan teks grup untuk !rangkum (bukan dari bot sendiri, bukan perintah)
+      const gjid = msg.key?.remoteJid;
+      if (gjid?.endsWith('@g.us') && !msg.key.fromMe && msg.message) {
+        const t = getText(msg.message).trim();
+        if (t && !t.startsWith('!')) {
+          const who = msg.key.participant || gjid;
+          recordGroupMessage(gjid, msg.pushName || who.split('@')[0].split(':')[0], t, Number(msg.messageTimestamp) * 1000 || Date.now());
+        }
+      }
       handleMessage(sock, msg).catch((e) => console.error('Handler error:', e));
     }
   });
