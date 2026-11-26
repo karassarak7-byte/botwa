@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { startGame, takeClue, guess, giveUp, categories, prizeFor, formatClues } from './tebakkata.js';
 import { initWerewolf, handleWW, handleVote, handleWWDM, WW_DM_CMDS } from './werewolf.js';
-import { markGreeted } from './database.js';
+import { countCall, markGreeted } from './database.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -461,6 +461,26 @@ async function start() {
   });
 
   sock.ev.on('creds.update', saveCreds);
+
+  // Panggilan ke bot: tolak, peringatan pertama, lalu blokir jika menelpon lagi
+  const handledCalls = new Set();
+  sock.ev.on('call', async (calls) => {
+    for (const call of calls) {
+      if (call.status !== 'offer' || call.isGroup || handledCalls.has(call.id)) continue;
+      handledCalls.add(call.id);
+      await sock.rejectCall(call.id, call.from).catch((e) => console.error('[call] tolak gagal:', e.message));
+      const count = await countCall(bareJid(call.from));
+      if (count === 1) {
+        await sock.sendMessage(call.from, {
+          text: '⚠️ Jangan menelpon bot ini. Ini peringatan pertama. Jika menelpon lagi, nomormu akan diblokir.',
+        }).catch((e) => console.error('[call] peringatan gagal:', e.message));
+      } else {
+        await sock.updateBlockStatus(call.from, 'block')
+          .catch((e) => console.error('[call] blokir gagal:', e.message));
+        console.log('[call] diblokir karena menelpon lagi:', bareJid(call.from));
+      }
+    }
+  });
 
   // Sapaan member baru grup
   sock.ev.on('group-participants.update', async ({ id, participants, action }) => {

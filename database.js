@@ -79,6 +79,14 @@ export function markGreeted(id) {
   });
 }
 
+// Hitung panggilan masuk ke bot: 1 = peringatan pertama, 2 atau lebih = diblokir
+export function countCall(id) {
+  return updateUser(id, (u) => {
+    u.callCount = (u.callCount ?? 0) + 1;
+    return u.callCount;
+  });
+}
+
 // Potong energi untuk !sticker. Gagal jika energi tidak cukup.
 export function spendEnergy(id, cost) {
   return updateUser(id, (u) => {
