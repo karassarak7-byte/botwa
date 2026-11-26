@@ -123,8 +123,8 @@
     "createdAt": 1795694447459
   },
   "157286467149922@lid": {
-    "energy": 30,
-    "lastClaim": 0,
+    "energy": 45,
+    "lastClaim": 1795695505273,
     "createdAt": 1795694632538
   },
   "236558309392583": {
@@ -141,5 +141,10 @@
     "energy": 30,
     "lastClaim": 0,
     "createdAt": 1795694781954
+  },
+  "241850279542801@lid": {
+    "energy": 30,
+    "lastClaim": 0,
+    "createdAt": 1795695591814
   }
 }

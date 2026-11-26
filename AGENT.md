@@ -8,7 +8,7 @@
 - Perintah (prefix !): !menu/!help, !ping, !energi/!cek, !claim (+15, cooldown 1 jam), !sticker/!s (biaya 3, refund jika gagal, video crop 512x512, maks 10 detik, wajib audio, maks 2 MB, foto jadi stiker), !spin, !tebak, !jawab, !clue, !menyerah.
 - Fitur efek foto (!nobg, !hitam, !hd) sudah DIHAPUS atas permintaan pengguna, beserta imgfx.js, folder models, dan paket imgly, onnxruntime-node, sharp.
 - Sapaan: chat pribadi pertama kali dari pengguna (markGreeted, flag greeted di users.json) dan member baru grup (event group-participants.update, action add). Bot sendiri dilewati.
-- Werewolf: !ww create/join/leave/start/status/stop, !vote, aksi malam via DM (!kill, !infect, !cek, !heal, !shoot, !stab). Nama pemain dari pushName. Hadiah +20.
+- Werewolf: !ww create/join/leave/start/status/stop, !vote, aksi malam via DM (!kill, !infect, !cek, !heal, !shoot, !stab). Nama pemain dari pushName. Hadiah +20. Peran seer, doctor, vigilante, dan netral (jester, fool, serial) tidak boleh ganda; netral mulai 6 pemain. Werewolf dan villager boleh banyak. Jumlah werewolf = floor(n/4), dengan 1 Alpha mulai 8 pemain.
 - Energi awal 30 (START_ENERGY), maks 150 (MAX_ENERGY). Cooldown 2 detik per pengguna.
 - Pengendali: OWNER_NUMBERS di index.js (6289692853559). Tanpa cooldown dan tanpa biaya sticker. Perintah: !setenergi <nomor> <0-150>, !cekuser <nomor>.
 - Status: sound sticker masih percobaan, belum dikonfirmasi di HP penerima. Sapaan sudah dijalankan di panel, belum diuji dari WhatsApp.

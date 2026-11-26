@@ -53,21 +53,30 @@ async function dm(jid, text) {
 const say = (group, text) => io.send(group, text).catch((e) => console.error('Kirim grup gagal:', e?.message));
 
 // Komposisi role sesuai jumlah pemain, lalu diacak
+// Peran tunggal (tidak boleh ganda): seer, doctor, vigilante, dan netral jester, fool, serial.
+// Werewolf dan villager boleh banyak. Netral baru muncul mulai 6 pemain.
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 function buildRoles(n) {
   const roles = [];
   const wolves = Math.max(1, Math.floor(n / 4));
   for (let i = 0; i < wolves; i++) roles.push('werewolf');
   if (n >= 8) roles[0] = 'alpha';
-  roles.push('seer', 'doctor');
-  if (n >= 6) roles.push('vigilante', 'jester');
-  if (n >= 7) roles.push('fool');
-  if (n >= 9) roles.push('serial');
-  while (roles.length < n) roles.push('villager');
-  for (let i = roles.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [roles[i], roles[j]] = [roles[j], roles[i]];
+  const specials = ['seer', 'doctor'];
+  if (n >= 6) {
+    specials.push('vigilante');
+    specials.push(...shuffle(['jester', 'fool', 'serial']));
   }
-  return roles.slice(0, n);
+  const slots = n - roles.length;
+  roles.push(...specials.slice(0, slots));
+  while (roles.length < n) roles.push('villager');
+  return shuffle(roles);
 }
 
 function newGame(group) {
