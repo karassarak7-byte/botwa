@@ -5,6 +5,8 @@ const DAY_MS = 60_000;     // diskusi siang (60 detik)
 const VOTE_MS = 45_000;    // voting eksekusi (45 detik)
 const REWARD = 20;         // hadiah energi untuk pemenang
 const MIN_PLAYERS = 4;
+const LOBBY_MS = 60_000;        // waktu tunggu lobi sejak dibuka (1 menit)
+const LOBBY_JOIN_MS = 30_000;   // tambahan waktu tunggu setiap ada yang join
 
 const ROLE_INFO = {
   werewolf: { name: 'Werewolf', team: 'wolf', desc: 'Setiap malam bunuh 1 pemain lewat DM: !kill <nomor>.' },
@@ -80,7 +82,25 @@ function buildRoles(n) {
 }
 
 function newGame(group) {
-  return { group, phase: 'lobby', players: [], round: 0, actions: new Map(), votes: new Map(), timer: null };
+  return { group, phase: 'lobby', players: [], round: 0, actions: new Map(), votes: new Map(), timer: null, lobbyTimer: null, lobbyEnds: 0 };
+}
+
+// Timer lobi: kalau sampai habis tanpa pemain, lobi dihapus. Kalau sudah ada pemain, lobi tetap terbuka sampai !ww start.
+function armLobbyTimer(g, ms) {
+  clearTimeout(g.lobbyTimer);
+  g.lobbyEnds = Date.now() + ms;
+  g.lobbyTimer = setTimeout(() => onLobbyTimeout(g), ms);
+}
+
+async function onLobbyTimeout(g) {
+  g.lobbyTimer = null;
+  if (games.get(g.group) !== g || g.phase !== 'lobby') return;
+  if (g.players.length === 0) {
+    games.delete(g.group);
+    await say(g.group, '⌛ Lobi Werewolf dihapus karena tidak ada yang bergabung.');
+    return;
+  }
+  await say(g.group, `⌛ Waktu join habis. Lobi tetap terbuka (${g.players.length} pemain), ketik *!ww start* untuk mulai.`);
 }
 
 // Perintah lobi di grup: !ww create | join | leave | start | status | stop
@@ -90,8 +110,10 @@ export async function handleWW(group, sender, args, name = '') {
   switch (sub) {
     case 'create': {
       if (g) return 'Sudah ada game di grup ini. Cek dengan *!ww status*.';
-      games.set(group, newGame(group));
-      return `🐺 *WEREWOLF* — lobi dibuka!\nKetik *!ww join* untuk ikut (minimal ${MIN_PLAYERS} pemain).\nMulai dengan *!ww start*.`;
+      const ng = newGame(group);
+      games.set(group, ng);
+      armLobbyTimer(ng, LOBBY_MS);
+      return `🐺 *WEREWOLF* — lobi dibuka! Waktu join 1 menit (+30 detik tiap ada yang join).\nKetik *!ww join* untuk ikut (minimal ${MIN_PLAYERS} pemain).\nMulai dengan *!ww start*.`;
     }
     case 'join': {
       if (!g) return 'Belum ada lobi. Ketik *!ww create* dulu.';
@@ -101,7 +123,9 @@ export async function handleWW(group, sender, args, name = '') {
       if (where) return 'Kamu sedang main Werewolf di grup lain.';
       g.players.push({ jid: sender, name: name || key(sender), num: g.players.length + 1, role: null, team: null, alive: true, lastHeal: null, infectUsed: false, shootUsed: false });
       playerGame.set(key(sender), group);
-      return `✅ ${name || key(sender)} bergabung. Pemain: ${g.players.length}.`;
+      const remaining = Math.max(0, g.lobbyEnds - Date.now());
+      armLobbyTimer(g, remaining + LOBBY_JOIN_MS);
+      return `✅ ${name || key(sender)} bergabung. Pemain: ${g.players.length}. Waktu join +30 detik.`;
     }
     case 'leave': {
       if (!g || g.phase !== 'lobby') return 'Kamu hanya bisa keluar saat lobi, sebelum game dimulai.';
@@ -177,6 +201,8 @@ export async function handleWWDM(sender, cmd, args) {
 }
 
 async function startGame(g) {
+  clearTimeout(g.lobbyTimer);
+  g.lobbyTimer = null;
   const roles = buildRoles(g.players.length);
   g.players.forEach((p, i) => {
     p.role = roles[i];
@@ -336,6 +362,7 @@ function checkWin(g) {
 // Akhiri game: umumkan role semua pemain dan beri hadiah energi ke pemenang
 async function endGame(g, winner, note = '') {
   clearTimeout(g.timer);
+  clearTimeout(g.lobbyTimer);
   g.phase = 'over';
   games.delete(g.group);
   const label = { human: 'Tim Manusia', wolf: 'Tim Serigala', serial: 'Serial Killer', jester: 'Jester' };
