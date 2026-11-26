@@ -1,17 +1,15 @@
 # Bot WA (bot-wa)
-- Entry: index.js (ESM, package.json "type": "module"). Start: node index.js (MAIN_FILE=index.js).
-- File: database.js (users.json, energi, claim, spin, setEnergy, findUser, markGreeted, antrean tulis atomik), patch-fps.mjs (patch library sound sticker: fps list 24/30..., compression_level 2, batas 10 detik dan 2 MB; jalankan setelah npm install), werewolf.js (game Werewolf), tebakkata.js (tebak kata, sesi 5 menit).
-- Paket: @xbibzlibrary/whatsbibz 2.1.0 (fork Baileys), qrcode, pino, sharp 0.32.6 (dibutuhkan library). ffmpeg 5.1.9 di /usr/bin.
-- Install ulang: npm install, lalu node patch-fps.mjs (patch hilang jika npm install ulang).
-- Login: QR di terminal dan halaman http://IP:10775/ (PORT env). Session di folder auth (useMultiFileAuthState).
+- Entry: index.js (ESM, "type": "module"). Start: node index.js (MAIN_FILE=index.js). Panel Nano, Node 25 image, port 10775 (PORT/SERVER_PORT).
+- File: database.js (users.json: energi, claim, spin, setEnergy, findUser, markGreeted, countCall = hitungan panggilan, antrean tulis atomik), patch-fps.mjs (patch library sound sticker; jalankan setelah npm install), werewolf.js (game Werewolf, lobi 60 detik +30 detik per join), tebakkata.js (tebak kata, sesi 5 menit).
+- Paket: @xbibzlibrary/whatsbibz 2.1.0 (fork Baileys), qrcode, pino, sharp 0.32.6 (dipakai juga untuk stiker brat). ffmpeg 5.1.9 di /usr/bin. Font: DejaVu.
+- Install ulang: npm install, lalu node patch-fps.mjs.
+- Login: QR di terminal dan halaman http://IP:10775/. Session di folder auth.
 - makeWASocket: autoFollowChannel false. Pesan fromMe hanya diproses di self-chat. Grup dan chat orang lain diabaikan.
-- Perintah (prefix !): !menu/!help, !ping, !energi/!cek, !claim (+15, cooldown 1 jam), !sticker/!s (biaya 3, refund jika gagal, video crop 512x512, maks 10 detik, wajib audio, maks 2 MB, foto jadi stiker), !spin, !tebak, !jawab, !clue, !menyerah.
-- Fitur efek foto (!nobg, !hitam, !hd) sudah DIHAPUS atas permintaan pengguna.
-- Sapaan: chat pribadi pertama (markGreeted, flag greeted di users.json) dan member baru grup (group-participants.update, action add).
-- Werewolf: !ww create/join/leave/start/status/stop, !vote, aksi malam via DM (!kill, !infect, !cek, !heal, !shoot, !stab). Peran seer, doctor, vigilante, dan netral (jester, fool, serial) tidak boleh ganda; netral mulai 6 pemain. Werewolf dan villager boleh banyak. Jumlah werewolf = floor(n/4), 1 Alpha mulai 8 pemain. Hadiah +20.
+- Perintah (prefix !): !menu/!help, !ping, !energi/!cek, !claim (+15, 1 jam), !sticker/!s (3 energi, refund jika gagal), !brat / !bratwhite <teks> (2 energi, refund jika gagal, maks 100 karakter, latar hijau #8ACE00 / putih, teks hitam, rata kiri, sharp SVG + blur 1, WebP 512x512), !spin, !tebak, !jawab, !clue, !menyerah.
+- Panggilan ke bot (event call): panggilan pertama dibalas peringatan, berikutnya diblokir (rejectCall, updateBlockStatus).
+- Werewolf: !ww create/join/leave/start/status/stop, !vote, aksi malam via DM. Hadiah +20.
 - Energi awal 30, maks 150. Cooldown 2 detik per pengguna.
-- Pengendali: OWNER_NUMBERS di index.js (6289692853559). Tanpa cooldown dan biaya sticker. Perintah: !setenergi <nomor> <0-150>, !cekuser <nomor>.
-- Sound sticker: crop (libx264 ultrafast) lalu library convert (libwebp_anim). Lambat untuk video detail tinggi: video 1080p 10 detik worst case sekitar 45 detik. Library mencoba beberapa kualitas sampai di bawah 2 MB. Belum dikonfirmasi di HP penerima.
-- Status: sapaan sudah dijalankan di panel, belum diuji dari WhatsApp.
-- Log [debug] di index.js masih aktif. Hapus setelah stabil. Warning fluent-ffmpeg dari library tidak memengaruhi fitur.
-- Gangguan jaringan node: EAI_AGAIN ke mmg.whatsapp.net pernah terjadi. Itu bukan bug kode.
+- Pengendali: OWNER_NUMBERS (6289692853559). Tanpa cooldown dan biaya sticker. Perintah !setenergi, !cekuser.
+- Belum dibuat: !tt (TikTok) dan !ytmp3 (YouTube). Rencana: tikwm API untuk TikTok; @distube/ytdl-core + ffmpeg untuk audio; yt-search untuk pencarian. Dibuat setelah jaringan node normal.
+- Gangguan jaringan node: DNS EAI_AGAIN (mmg.whatsapp.net, registry.npmjs.org, tikwm, youtube) dan koneksi WA sering putus kode 408. Bukan bug kode. Ke support KiosPanel.
+- Log [debug] di index.js masih aktif. Hapus setelah stabil.

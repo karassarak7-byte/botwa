@@ -169,7 +169,7 @@ _Perintah (awali dengan !)_
 • *!menyerah* — akhiri tebakan tanpa hadiah
 
 *🎨 STIKER TEKS*
-• *!brat <teks>* — stiker teks hijau gaya brat, biaya *2 ⚡* (maks 100 karakter)
+• *!brat <teks>* — stiker teks latar putih, biaya *2 ⚡* (maks 100 karakter)
 • *!bratwhite <teks>* — sama, dengan latar putih, biaya *2 ⚡*
 
 *🐺 WEREWOLF* (di grup)
@@ -228,11 +228,10 @@ async function bratSticker(text, background) {
   return sharp(Buffer.from(svg)).blur(1).webp().toBuffer();
 }
 
-async function handleBrat(sock, msg, jid, sender, args, background) {
+async function handleBrat(sock, msg, jid, sender, args, cmd) {
   const ctx = msg.message.extendedTextMessage?.contextInfo?.quotedMessage;
   const quotedText = ctx?.conversation || ctx?.extendedTextMessage?.text || '';
   const text = (args.join(' ').trim() || quotedText.trim());
-  const cmd = background === '#FFFFFF' ? '!bratwhite' : '!brat';
   if (!text) {
     return reply(sock, msg, `Contoh: *${cmd} teks yang mau dijadikan stiker*\n(atau balas pesan teks dengan *${cmd}*)`);
   }
@@ -244,7 +243,7 @@ async function handleBrat(sock, msg, jid, sender, args, background) {
     return reply(sock, msg, `Energi kurang. Stiker teks butuh ${BRAT_COST} ⚡, sisa kamu ${spend.energy} ⚡.\nCoba *!claim* (gratis) atau *!spin*.`);
   }
   try {
-    const webp = await bratSticker(text, background);
+    const webp = await bratSticker(text, '#FFFFFF');
     await sock.sendMessage(jid, { sticker: webp }, { quoted: msg });
     console.log(`Stiker brat terkirim ke ${sender}`);
   } catch (e) {
@@ -504,9 +503,9 @@ async function handleMessage(sock, msg) {
     case 's':
       return handleSticker(sock, msg, jid, sender, owner);
     case 'brat':
-      return handleBrat(sock, msg, jid, sender, args, '#8ACE00');
+      return handleBrat(sock, msg, jid, sender, args, '!brat');
     case 'bratwhite':
-      return handleBrat(sock, msg, jid, sender, args, '#FFFFFF');
+      return handleBrat(sock, msg, jid, sender, args, '!bratwhite');
     case 'spin':
       return handleSpin(sock, msg, sender, args);
     case 'tebak':
