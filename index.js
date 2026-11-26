@@ -170,7 +170,6 @@ _Perintah (awali dengan !)_
 
 *🎨 STIKER TEKS*
 • *!brat <teks>* — stiker teks latar putih, biaya *2 ⚡* (maks 100 karakter)
-• *!bratwhite <teks>* — sama, dengan latar putih, biaya *2 ⚡*
 
 *🐺 WEREWOLF* (di grup)
 • *!ww create* — buka lobi (minimal 4 pemain)
@@ -186,7 +185,7 @@ _Batas energi ${MAX_ENERGY} ⚡. Jeda 2 detik antar perintah._`;
 }
 
 // ---------- Stiker teks gaya brat ----------
-const BRAT_COST = 2;        // biaya !brat / !bratwhite
+const BRAT_COST = 2;        // biaya !brat
 const BRAT_MAX_CHARS = 100; // batas panjang teks
 
 // Pecah teks jadi baris sesuai lebar (greedy, kata panjang dipotong)
@@ -504,8 +503,6 @@ async function handleMessage(sock, msg) {
       return handleSticker(sock, msg, jid, sender, owner);
     case 'brat':
       return handleBrat(sock, msg, jid, sender, args, '!brat');
-    case 'bratwhite':
-      return handleBrat(sock, msg, jid, sender, args, '!bratwhite');
     case 'spin':
       return handleSpin(sock, msg, sender, args);
     case 'tebak':

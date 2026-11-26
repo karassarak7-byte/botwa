@@ -5,7 +5,7 @@
 - Install ulang: npm install, lalu node patch-fps.mjs.
 - Login: QR di terminal dan halaman http://IP:10775/. Session di folder auth.
 - makeWASocket: autoFollowChannel false. Pesan fromMe hanya diproses di self-chat. Grup dan chat orang lain diabaikan.
-- Perintah (prefix !): !menu/!help, !ping, !energi/!cek, !claim (+15, 1 jam), !sticker/!s (3 energi, refund jika gagal), !brat / !bratwhite <teks> (2 energi, refund jika gagal, maks 100 karakter, latar hijau #8ACE00 / putih, teks hitam, rata kiri, sharp SVG + blur 1, WebP 512x512), !spin, !tebak, !jawab, !clue, !menyerah.
+- Perintah (prefix !): !menu/!help, !ping, !energi/!cek, !claim (+15, 1 jam), !sticker/!s (3 energi, refund jika gagal), !brat <teks> (2 energi, refund jika gagal, maks 100 karakter, latar putih, teks hitam, rata kiri, sharp SVG + blur 1, WebP 512x512), !spin, !tebak, !jawab, !clue, !menyerah.
 - Panggilan ke bot (event call): panggilan pertama dibalas peringatan, berikutnya diblokir (rejectCall, updateBlockStatus).
 - Werewolf: !ww create/join/leave/start/status/stop, !vote, aksi malam via DM. Hadiah +20.
 - Energi awal 30, maks 150. Cooldown 2 detik per pengguna.
