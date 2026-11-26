@@ -1,0 +1,15 @@
+# Bot WA (bot-wa)
+- Entry: index.js (ESM, package.json "type": "module"). Start: node index.js (MAIN_FILE=index.js).
+- File: database.js (users.json, energi, claim, spin, setEnergy, findUser, markGreeted, antrean tulis atomik), patch-fps.mjs (patch fps dan batas sound sticker di library, jalankan setelah npm install), werewolf.js (game Werewolf), tebakkata.js (tebak kata, sesi 5 menit).
+- Paket: @xbibzlibrary/whatsbibz 2.1.0 (fork Baileys), qrcode, pino. ffmpeg 5.1.9 di /usr/bin.
+- Install ulang: npm install, lalu node patch-fps.mjs (patch hilang jika npm install ulang).
+- Login: QR di terminal dan halaman http://IP:10775/ (PORT env). Session di folder auth (useMultiFileAuthState).
+- makeWASocket: autoFollowChannel false. Pesan fromMe hanya diproses di self-chat. Grup dan chat orang lain diabaikan.
+- Perintah (prefix !): !menu/!help, !ping, !energi/!cek, !claim (+15, cooldown 1 jam), !sticker/!s (biaya 3, refund jika gagal, video crop 512x512, maks 10 detik, wajib audio, maks 2 MB, foto jadi stiker), !spin, !tebak, !jawab, !clue, !menyerah.
+- Fitur efek foto (!nobg, !hitam, !hd) sudah DIHAPUS atas permintaan pengguna, beserta imgfx.js, folder models, dan paket imgly, onnxruntime-node, sharp.
+- Sapaan: chat pribadi pertama kali dari pengguna (markGreeted, flag greeted di users.json) dan member baru grup (event group-participants.update, action add). Bot sendiri dilewati.
+- Werewolf: !ww create/join/leave/start/status/stop, !vote, aksi malam via DM (!kill, !infect, !cek, !heal, !shoot, !stab). Nama pemain dari pushName. Hadiah +20.
+- Energi awal 30 (START_ENERGY), maks 150 (MAX_ENERGY). Cooldown 2 detik per pengguna.
+- Pengendali: OWNER_NUMBERS di index.js (6289692853559). Tanpa cooldown dan tanpa biaya sticker. Perintah: !setenergi <nomor> <0-150>, !cekuser <nomor>.
+- Status: sound sticker masih percobaan, belum dikonfirmasi di HP penerima. Sapaan sudah dijalankan di panel, belum diuji dari WhatsApp.
+- Log [debug] di index.js masih aktif. Hapus setelah stabil. Warning fluent-ffmpeg dari library tidak memengaruhi fitur.
