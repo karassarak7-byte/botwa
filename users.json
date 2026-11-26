@@ -6,7 +6,7 @@
     "greeted": true
   },
   "126615837229149@lid": {
-    "energy": 115,
+    "energy": 112,
     "lastClaim": 1795693756844,
     "createdAt": 1795679419428,
     "greeted": true
@@ -25,7 +25,8 @@
   "140811257835555@lid": {
     "energy": 100,
     "lastClaim": 0,
-    "createdAt": 1795680576088
+    "createdAt": 1795680576088,
+    "greeted": true
   },
   "119353013981231@lid": {
     "energy": 100,
@@ -51,7 +52,8 @@
   "26985430524120@lid": {
     "energy": 97,
     "lastClaim": 0,
-    "createdAt": 1795682545465
+    "createdAt": 1795682545465,
+    "greeted": true
   },
   "222135758905585@lid": {
     "energy": 100,
@@ -113,17 +115,17 @@
     "createdAt": 1795694447425
   },
   "1670842970193": {
-    "energy": 70,
+    "energy": 130,
     "lastClaim": 0,
     "createdAt": 1795694447445
   },
   "129317170319508": {
-    "energy": 90,
+    "energy": 130,
     "lastClaim": 0,
     "createdAt": 1795694447459
   },
   "157286467149922@lid": {
-    "energy": 45,
+    "energy": 42,
     "lastClaim": 1795695505273,
     "createdAt": 1795694632538
   },
@@ -138,7 +140,7 @@
     "createdAt": 1795694767953
   },
   "26861212016894@lid": {
-    "energy": 30,
+    "energy": 27,
     "lastClaim": 0,
     "createdAt": 1795694781954
   },
@@ -146,5 +148,36 @@
     "energy": 30,
     "lastClaim": 0,
     "createdAt": 1795695591814
+  },
+  "26663257657542@lid": {
+    "energy": 30,
+    "lastClaim": 0,
+    "createdAt": 1795695938320
+  },
+  "140811257835555": {
+    "energy": 90,
+    "lastClaim": 0,
+    "createdAt": 1795695946393
+  },
+  "255404693053583@lid": {
+    "energy": 45,
+    "lastClaim": 1795695960260,
+    "createdAt": 1795695960334
+  },
+  "26985430524120": {
+    "energy": 50,
+    "lastClaim": 0,
+    "createdAt": 1795696323534
+  },
+  "230197462880341@lid": {
+    "energy": 45,
+    "lastClaim": 1795696709193,
+    "createdAt": 1795696688912
+  },
+  "107297007222861@lid": {
+    "energy": 30,
+    "lastClaim": 0,
+    "createdAt": 1795696795134,
+    "greeted": true
   }
 }
