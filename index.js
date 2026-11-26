@@ -53,6 +53,7 @@ async function cropSquareVideo(input) {
   }
 }
 
+const sharp = (await import('sharp')).default;
 const lib = await import('@xbibzlibrary/whatsbibz');
 const pino = (await import('pino')).default;
 const QRCode = (await import('qrcode')).default;
@@ -167,6 +168,10 @@ _Perintah (awali dengan !)_
 • *!clue* — buka clue berikutnya, hadiah turun 20% tiap clue
 • *!menyerah* — akhiri tebakan tanpa hadiah
 
+*🎨 STIKER TEKS*
+• *!brat <teks>* — stiker teks hijau gaya brat, biaya *2 ⚡* (maks 100 karakter)
+• *!bratwhite <teks>* — sama, dengan latar putih, biaya *2 ⚡*
+
 *🐺 WEREWOLF* (di grup)
 • *!ww create* — buka lobi (minimal 4 pemain)
 • *!ww join* / *!ww leave* — ikut atau keluar lobi
@@ -178,6 +183,75 @@ _Perintah (awali dengan !)_
 • Pemenang dapat +20 ⚡
 
 _Batas energi ${MAX_ENERGY} ⚡. Jeda 2 detik antar perintah._`;
+}
+
+// ---------- Stiker teks gaya brat ----------
+const BRAT_COST = 2;        // biaya !brat / !bratwhite
+const BRAT_MAX_CHARS = 100; // batas panjang teks
+
+// Pecah teks jadi baris sesuai lebar (greedy, kata panjang dipotong)
+function wrapText(text, fontSize, maxWidth) {
+  const maxChars = Math.max(1, Math.floor(maxWidth / (fontSize * 0.6)));
+  const lines = [];
+  let line = '';
+  for (const word of text.split(/\s+/)) {
+    for (let w = word; w.length > 0; ) {
+      const room = maxChars - line.length - (line ? 1 : 0);
+      if (room <= 0) { lines.push(line); line = ''; continue; }
+      const piece = w.slice(0, room);
+      line = line ? `${line} ${piece}` : piece;
+      w = w.slice(piece.length);
+      if (w.length > 0) { lines.push(line); line = ''; }
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+// Teks rata kiri, ukuran font diturunkan sampai muat di kanvas 512x512
+async function bratSticker(text, background) {
+  const size = 512, pad = 36, maxW = size - pad * 2;
+  let fontSize = 120, lines = [];
+  for (let fs = 120; fs >= 36; fs -= 4) {
+    const l = wrapText(text, fs, maxW);
+    if (l.length * fs * 1.05 <= maxW) { fontSize = fs; lines = l; break; }
+    lines = l;
+  }
+  const lineH = fontSize * 1.05;
+  const startY = (size - lines.length * lineH) / 2 + fontSize * 0.85;
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const tspans = lines.map((l, i) =>
+    `<text x="${pad}" y="${startY + i * lineH}" font-size="${fontSize}" font-weight="700">${esc(l)}</text>`).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+<rect width="100%" height="100%" fill="${background}"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#000000">${tspans}</g></svg>`;
+  return sharp(Buffer.from(svg)).blur(1).webp().toBuffer();
+}
+
+async function handleBrat(sock, msg, jid, sender, args, background) {
+  const ctx = msg.message.extendedTextMessage?.contextInfo?.quotedMessage;
+  const quotedText = ctx?.conversation || ctx?.extendedTextMessage?.text || '';
+  const text = (args.join(' ').trim() || quotedText.trim());
+  const cmd = background === '#FFFFFF' ? '!bratwhite' : '!brat';
+  if (!text) {
+    return reply(sock, msg, `Contoh: *${cmd} teks yang mau dijadikan stiker*\n(atau balas pesan teks dengan *${cmd}*)`);
+  }
+  if ([...text].length > BRAT_MAX_CHARS) {
+    return reply(sock, msg, `Teks terlalu panjang, maksimal ${BRAT_MAX_CHARS} karakter. Energi tidak dipotong.`);
+  }
+  const spend = await spendEnergy(sender, BRAT_COST);
+  if (!spend.ok) {
+    return reply(sock, msg, `Energi kurang. Stiker teks butuh ${BRAT_COST} ⚡, sisa kamu ${spend.energy} ⚡.\nCoba *!claim* (gratis) atau *!spin*.`);
+  }
+  try {
+    const webp = await bratSticker(text, background);
+    await sock.sendMessage(jid, { sticker: webp }, { quoted: msg });
+    console.log(`Stiker brat terkirim ke ${sender}`);
+  } catch (e) {
+    console.error('Brat gagal:', e?.message);
+    await refundEnergy(sender, BRAT_COST).catch((err) => console.error('Refund gagal:', err));
+    await reply(sock, msg, `Gagal membuat stiker teks: ${e?.message || 'kesalahan tidak diketahui'}\n${BRAT_COST} ⚡ sudah dikembalikan.`);
+  }
 }
 
 // ---------- Perintah ----------
@@ -429,6 +503,10 @@ async function handleMessage(sock, msg) {
     case 'sticker':
     case 's':
       return handleSticker(sock, msg, jid, sender, owner);
+    case 'brat':
+      return handleBrat(sock, msg, jid, sender, args, '#8ACE00');
+    case 'bratwhite':
+      return handleBrat(sock, msg, jid, sender, args, '#FFFFFF');
     case 'spin':
       return handleSpin(sock, msg, sender, args);
     case 'tebak':
