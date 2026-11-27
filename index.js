@@ -213,21 +213,32 @@ _Jeda 2 detik antar perintah • Batas energi ${MAX_ENERGY} ⚡_`;
 const BRAT_COST = 2;        // biaya !brat
 const BRAT_MAX_CHARS = 100; // batas panjang teks
 
-// Pecah teks per kata sesuai lebar. Kata utuh tidak dipotong, kecuali kata itu sendiri lebih panjang dari satu baris.
-function wrapText(text, fontSize, maxWidth) {
-  const maxChars = Math.max(1, Math.floor(maxWidth / (fontSize * 0.6)));
+const xmlEsc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// Ukur lebar tinta teks asli (font Liberation Sans Bold) dengan merender teks lalu membaca piksel gelapnya.
+async function measureInk(text, fontSize) {
+  const W = Math.ceil(fontSize * [...text].length * 1.4) + 200, H = Math.ceil(fontSize * 2.4);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><rect width="100%" height="100%" fill="#fff"/><text x="100" y="${(fontSize * 1.7).toFixed(1)}" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="${fontSize}" font-weight="700" fill="#000">${xmlEsc(text)}</text></svg>`;
+  const { data, info } = await sharp(Buffer.from(svg)).greyscale().raw().toBuffer({ resolveWithObject: true });
+  let minX = info.width, maxX = -1;
+  for (let y = 0; y < info.height; y++) {
+    const row = y * info.width;
+    for (let x = 0; x < info.width; x++) {
+      if (data[row + x] < 128) { if (x < minX) minX = x; if (x > maxX) maxX = x; }
+    }
+  }
+  if (maxX < 0) return { left: 0, width: 0 };
+  return { left: minX - 100, width: maxX - minX + 1 };
+}
+
+// Pecah teks per kata: satu baris diisi selama masih muat di lebar maxW. Kata utuh tidak dipotong.
+async function wrapBrat(text, fontSize, maxW) {
   const lines = [];
   let line = '';
   for (const word of text.split(/\s+/).filter(Boolean)) {
-    let w = word;
-    while (w.length > maxChars) {
-      if (line) { lines.push(line); line = ''; }
-      lines.push(w.slice(0, maxChars));
-      w = w.slice(maxChars);
-    }
-    if (!line) line = w;
-    else if (line.length + 1 + w.length <= maxChars) line += ` ${w}`;
-    else { lines.push(line); line = w; }
+    const cand = line ? `${line} ${word}` : word;
+    if (!line || (await measureInk(cand, fontSize)).width <= maxW) line = cand;
+    else { lines.push(line); line = word; }
   }
   if (line) lines.push(line);
   return lines;
@@ -235,34 +246,38 @@ function wrapText(text, fontSize, maxWidth) {
 
 // Teks rata kiri gaya brat: font Arial-like (Liberation Sans Bold), diregangkan vertikal,
 // lalu dibuat pixelated dan sedikit blur. Ukuran font diturunkan sampai muat di kanvas 512x512.
-const BRAT_SX = 0.8;  // lebar huruf (lebih sempit)
 const BRAT_SY = 1.3;  // tinggi huruf (diregangkan ke atas)
 const BRAT_WATERMARK = 'bot by nuzzelll';  // tulisan wm di stiker brat
 async function bratSticker(text, background) {
   const size = 512, pad = 36, maxW = size - pad * 2;
-  let fontSize = 36, lines = [];
+  let fontSize = 36, lines = [], ink = [];
   for (let fs = 120; fs >= 20; fs -= 4) {
-    const l = wrapText(text, fs, maxW);
-    fontSize = fs; lines = l;
-    if (l.length * fs * 1.05 * BRAT_SY <= maxW) break;
+    const l = await wrapBrat(text, fs, maxW);
+    const m = await Promise.all(l.map((s) => measureInk(s, fs)));
+    fontSize = fs; lines = l; ink = m;
+    if (l.length * fs * 1.05 * BRAT_SY <= maxW && m.every((x) => x.width <= maxW)) break;
   }
   const lineH = fontSize * 1.05 * BRAT_SY;
   const top = (size - lines.length * lineH) / 2;
-  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const tspans = lines.map((l, i) =>
-    `<text x="0" y="0" transform="translate(${pad} ${top + fontSize * 0.9 * BRAT_SY + i * lineH}) scale(${BRAT_SX} ${BRAT_SY})" font-size="${fontSize}" font-weight="700">${esc(l)}</text>`).join('');
+  // Tiap baris diregangkan horizontal sampai lebar penuh (melar), tinggi huruf tetap BRAT_SY
+  const tspans = lines.map((l, i) => {
+    const sx = ink[i].width > 0 ? maxW / ink[i].width : 1;
+    const x = pad - ink[i].left * sx;
+    const y = top + fontSize * 0.9 * BRAT_SY + i * lineH;
+    return `<text x="0" y="0" transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${sx.toFixed(4)} ${BRAT_SY})" font-size="${fontSize}" font-weight="700">${xmlEsc(l)}</text>`;
+  }).join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
 <rect width="100%" height="100%" fill="${background}"/>
 <g font-family="Liberation Sans, Arial, Helvetica, sans-serif" fill="#000000">${tspans}</g></svg>`;
   // Pixelated: turunkan ke 64 px, lalu naikkan lagi dengan nearest supaya kotak-kotak terlihat
   const base = await sharp(Buffer.from(svg))
-    .resize(64, 64)
+    .resize(40, 40)
     .resize(size, size, { kernel: sharp.kernel.nearest })
     .blur(0.6)
     .png()
     .toBuffer();
   // Nama pack dan publisher disimpan sebagai metadata WebP (EXIF), muncul saat stiker disimpan
-  const webp = await sharp(base).webp().toBuffer();
+  const webp = await sharp(base).webp({ quality: 50 }).toBuffer();
   return addStickerExif(webp, BRAT_WATERMARK, BRAT_WATERMARK, size, size);
 }
 
