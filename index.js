@@ -213,20 +213,21 @@ _Jeda 2 detik antar perintah • Batas energi ${MAX_ENERGY} ⚡_`;
 const BRAT_COST = 2;        // biaya !brat
 const BRAT_MAX_CHARS = 100; // batas panjang teks
 
-// Pecah teks jadi baris sesuai lebar (greedy, kata panjang dipotong)
+// Pecah teks per kata sesuai lebar. Kata utuh tidak dipotong, kecuali kata itu sendiri lebih panjang dari satu baris.
 function wrapText(text, fontSize, maxWidth) {
   const maxChars = Math.max(1, Math.floor(maxWidth / (fontSize * 0.6)));
   const lines = [];
   let line = '';
-  for (const word of text.split(/\s+/)) {
-    for (let w = word; w.length > 0; ) {
-      const room = maxChars - line.length - (line ? 1 : 0);
-      if (room <= 0) { lines.push(line); line = ''; continue; }
-      const piece = w.slice(0, room);
-      line = line ? `${line} ${piece}` : piece;
-      w = w.slice(piece.length);
-      if (w.length > 0) { lines.push(line); line = ''; }
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    let w = word;
+    while (w.length > maxChars) {
+      if (line) { lines.push(line); line = ''; }
+      lines.push(w.slice(0, maxChars));
+      w = w.slice(maxChars);
     }
+    if (!line) line = w;
+    else if (line.length + 1 + w.length <= maxChars) line += ` ${w}`;
+    else { lines.push(line); line = w; }
   }
   if (line) lines.push(line);
   return lines;
@@ -239,7 +240,7 @@ const BRAT_SY = 1.3;  // tinggi huruf (diregangkan ke atas)
 async function bratSticker(text, background) {
   const size = 512, pad = 36, maxW = size - pad * 2;
   let fontSize = 36, lines = [];
-  for (let fs = 120; fs >= 36; fs -= 4) {
+  for (let fs = 120; fs >= 20; fs -= 4) {
     const l = wrapText(text, fs, maxW);
     fontSize = fs; lines = l;
     if (l.length * fs * 1.05 * BRAT_SY <= maxW) break;
