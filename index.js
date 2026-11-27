@@ -45,7 +45,7 @@ async function cropSquareVideo(input) {
     await execFileAsync('ffmpeg', [
       '-y', '-v', 'error', '-i', inFile, '-t', String(STICKER_MAX_SECONDS),
       '-vf', 'crop=min(iw\\,ih):min(iw\\,ih),scale=512:512,setsar=1',
-      '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28', '-pix_fmt', 'yuv420p',
+      '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23', '-pix_fmt', 'yuv420p',
       '-c:a', 'aac', '-b:a', '96k', '-ac', '1', '-movflags', '+faststart', outFile,
     ], { timeout: 60000 });
     return await readFile(outFile);
