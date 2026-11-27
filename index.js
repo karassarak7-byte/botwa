@@ -35,7 +35,7 @@ async function imageToSticker(input) {
   }
 }
 
-// Potong video ke persegi di tengah (center crop) lalu ubah ke 512x512, maksimal 10 detik, audio tetap ada.
+// Potong video ke persegi di tengah (center crop) lalu ubah ke 512x512, dipotong 6 detik, audio tetap ada.
 async function cropSquareVideo(input) {
   const dir = await mkdtemp(join(tmpdir(), 'stk-'));
   const inFile = join(dir, 'in.mp4');
@@ -43,7 +43,7 @@ async function cropSquareVideo(input) {
   try {
     await writeFile(inFile, input);
     await execFileAsync('ffmpeg', [
-      '-y', '-v', 'error', '-i', inFile, '-t', String(STICKER_MAX_SECONDS),
+      '-y', '-v', 'error', '-i', inFile, '-t', String(STICKER_CUT_SECONDS),
       '-vf', 'crop=min(iw\\,ih):min(iw\\,ih),scale=512:512,setsar=1',
       '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23', '-pix_fmt', 'yuv420p',
       '-c:a', 'aac', '-b:a', '96k', '-ac', '1', '-movflags', '+faststart', outFile,
@@ -76,7 +76,8 @@ const OWNER_NUMBERS = new Set(['6289692853559']);
 const PORT = Number(process.env.PORT || process.env.SERVER_PORT || 10775);
 const COOLDOWN_MS = 2000;        // jeda antar perintah per pengguna
 const STICKER_COST = 3;          // biaya !sticker
-const STICKER_MAX_SECONDS = 10;  // durasi video maksimal (library juga harus dipatch, lihat patch-fps.mjs)
+const STICKER_MAX_SECONDS = 10;  // durasi video input maksimal (library juga harus dipatch, lihat patch-fps.mjs)
+const STICKER_CUT_SECONDS = 6;   // hasil stiker dipotong 6 detik agar tetap di bawah 500 KiB (8 detik tidak muat untuk video rumit)
 const STICKER_MAX_INPUT_BYTES = 2 * 1024 * 1024; // ukuran maksimal video atau foto yang dijadikan stiker (2 MB)
 const STICKER_MAX_OUTPUT_BYTES = 500 * 1024;     // batas ukuran stiker foto WebP
 const SYMBOLS = ['🍒', '💎', '⚡', '🎰', '🍋'];
