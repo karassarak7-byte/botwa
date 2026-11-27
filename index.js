@@ -252,9 +252,9 @@ async function bratSticker(text, background) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
 <rect width="100%" height="100%" fill="${background}"/>
 <g font-family="Liberation Sans, Arial, Helvetica, sans-serif" fill="#000000">${tspans}</g></svg>`;
-  // Pixelated: turunkan ke 256 px, lalu naikkan lagi dengan nearest supaya kotak-kotak terlihat
+  // Pixelated: turunkan ke 96 px, lalu naikkan lagi dengan nearest supaya kotak-kotak terlihat
   return sharp(Buffer.from(svg))
-    .resize(256, 256)
+    .resize(96, 96)
     .resize(size, size, { kernel: sharp.kernel.nearest })
     .blur(0.6)
     .webp()
