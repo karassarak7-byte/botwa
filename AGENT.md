@@ -13,7 +13,7 @@
 - Paket: @xbibzlibrary/whatsbibz 2.1.0 (fork Baileys), qrcode, pino (silent), sharp 0.32.6, ffmpeg 5.1.9 di /usr/bin. Library tidak punya helper EXIF.
 - Perintah (prefix !):
   - !menu/!help, !ping, !energi/!cek, !claim (+15, tiap 1 jam), !spin, !tebak, !jawab, !clue, !menyerah.
-  - !sticker/!s (3 energi, refund jika gagal). Video dipotong 6 detik (STICKER_CUT_SECONDS), input maks 10 detik (STICKER_MAX_SECONDS).
+  - !sticker/!s (3 energi, refund jika gagal). Video dipotong 7 detik (STICKER_CUT_SECONDS), input maks 10 detik (STICKER_MAX_SECONDS).
   - !brat <teks> (2 energi, maks 100 karakter, teks dari balasan juga boleh). Font Liberation Sans, BRAT_SX 0.8, BRAT_SY 1.3, latar putih, pixelated resize 64 lalu 512, blur 0.6. Nama pack dan publisher "bot by nuzzelll" lewat metadata EXIF (addStickerExif), bukan tulisan di gambar.
   - !rangkum/!tldr [jumlah] (5 energi, grup saja, min 5, maks 30, refund jika gagal).
   - !werewolf / !ww create/join/leave/start/status/stop, !vote, aksi malam via DM. Hadiah +20. Peran seer, doctor, vigilante, netral (jester, fool, serial) tidak boleh ganda. Netral mulai 6 pemain. Jumlah werewolf = floor(n/4), 1 Alpha mulai 8 pemain.

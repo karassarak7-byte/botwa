@@ -151,6 +151,7 @@ function explainError(e) {
     case 'TOO_BIG': return 'ukuran maksimal 2 MB.';
     case 'FFMPEG_NOT_FOUND': return 'ffmpeg tidak ditemukan di server.';
     case 'FFMPEG_TIMEOUT': return 'proses video terlalu lama, coba video yang lebih pendek.';
+    case 'STICKER_TOO_LARGE': return 'video terlalu berat untuk stiker animasi (maks 500 KiB). Coba video yang lebih pendek atau gerakannya lebih sederhana.';
     default: return e?.message || 'terjadi kesalahan tidak diketahui.';
   }
 }
