@@ -12,11 +12,11 @@ if (!pattern.test(src)) {
   process.exit(1);
 }
 
-// Batas durasi sound sticker: 10 detik. Batas ukuran stiker: 2 MB.
+// Batas durasi sound sticker: 10 detik. Batas ukuran stiker animasi WhatsApp: 500 KiB (bukan 2 MB, itu batas input).
 const patched = src
-  .replace(pattern, 'for (const [fps, quality] of [[24, 40], [24, 30], [18, 25], [15, 20], [12, 15]]) {')
+  .replace(pattern, 'for (const [fps, quality] of [[24, 40], [24, 30], [18, 25], [15, 20], [12, 15], [12, 10], [10, 5]]) {')
   .replace(`'-compression_level', '5'`, `'-compression_level', '2'`)
   .replace(/export const SOUND_STICKER_MAX_SECONDS = \d+;/, 'export const SOUND_STICKER_MAX_SECONDS = 10;')
-  .replace(/export const SOUND_STICKER_MAX_WEBP_BYTES = [^;]+;/, 'export const SOUND_STICKER_MAX_WEBP_BYTES = 2 * 1024 * 1024;');
+  .replace(/export const SOUND_STICKER_MAX_WEBP_BYTES = [^;]+;/, 'export const SOUND_STICKER_MAX_WEBP_BYTES = 500 * 1024;');
 writeFileSync(file, patched);
 console.log('Patch FPS selesai:', file);

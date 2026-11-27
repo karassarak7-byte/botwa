@@ -185,9 +185,7 @@ function buildMenu(energy) {
 ┃ • !menyerah
 ┗━━━━━━━━━━━━━━━━━━━
 
-┏━ 🧠 *AI & GRUP*
-┃ • !ai <pertanyaan> / !tanya — *3 ⚡*
-┃   bisa juga balas pesan lalu ketik !ai
+┏━ 🧠 *GRUP*
 ┃ • !rangkum [jumlah] / !tldr — *5 ⚡*
 ┃   rangkum obrolan grup, default 30,
 ┃   maks 30 pesan terakhir (khusus grup)
@@ -277,12 +275,10 @@ async function handleBrat(sock, msg, jid, sender, args, cmd) {
 }
 
 // ---------- AI dan rangkuman grup ----------
-const AI_COST = 3;              // biaya !ai / !tanya
 const RANGKUM_COST = 5;         // biaya !rangkum / !tldr
 const RANGKUM_DEFAULT = 30;
 const RANGKUM_MIN = 5;
 const RANGKUM_MAX = 30;
-const AI_SYSTEM = 'Jawab pertanyaan pengguna secara langsung, akurat, dan ringkas: maksimal 2-3 paragraf pendek agar nyaman dibaca di layar HP. Pakai bahasa Indonesia yang santai. Gunakan format WhatsApp: *tebal*, _miring_, dan poin-poin bila perlu. Jangan pakai heading markdown atau blok kode.';
 const RANGKUM_SYSTEM = 'Kamu merangkum obrolan grup. Tulis topik utama diskusi dalam poin-poin singkat, bahasa Indonesia santai dan mudah dibaca. Format WhatsApp: *tebal*, _miring_, poin dengan tanda "•". Jangan pakai heading markdown. Sebut nama orang bila relevan.';
 
 async function handleRangkum(sock, msg, jid, sender, args) {
@@ -307,30 +303,6 @@ async function handleRangkum(sock, msg, jid, sender, args) {
     console.error('Rangkum gagal:', e?.code, e?.message);
     await refundEnergy(sender, RANGKUM_COST).catch((err) => console.error('Refund gagal:', err));
     await reply(sock, msg, `Gagal merangkum: ${e?.message || 'kesalahan tidak diketahui'}\n${RANGKUM_COST} ⚡ sudah dikembalikan.`);
-  }
-}
-
-async function handleAI(sock, msg, sender, args) {
-  const ctx = msg.message.extendedTextMessage?.contextInfo?.quotedMessage;
-  const quotedText = (ctx?.conversation || ctx?.extendedTextMessage?.text || ctx?.imageMessage?.caption || '').trim();
-  const question = args.join(' ').trim();
-  let prompt = '';
-  if (quotedText && question) prompt = `Pesan yang dibalas:\n"${quotedText}"\n\nPertanyaan: ${question}`;
-  else prompt = question || quotedText;
-  if (!prompt) {
-    return reply(sock, msg, 'Contoh: *!ai jelaskan cara kerja inflasi*\n(atau balas pesan dengan *!ai jelaskan maksudnya*)');
-  }
-  const spend = await spendEnergy(sender, AI_COST);
-  if (!spend.ok) {
-    return reply(sock, msg, `Energi kurang. Tanya AI butuh ${AI_COST} ⚡, sisa kamu ${spend.energy} ⚡.\nCoba *!claim* (gratis) atau *!spin*.`);
-  }
-  try {
-    const answer = await askAI(AI_SYSTEM, prompt);
-    await reply(sock, msg, answer);
-  } catch (e) {
-    console.error('AI gagal:', e?.code, e?.message);
-    await refundEnergy(sender, AI_COST).catch((err) => console.error('Refund gagal:', err));
-    await reply(sock, msg, `Gagal menjawab: ${e?.message || 'kesalahan tidak diketahui'}\n${AI_COST} ⚡ sudah dikembalikan.`);
   }
 }
 
@@ -588,9 +560,6 @@ async function handleMessage(sock, msg) {
     case 'rangkum':
     case 'tldr':
       return handleRangkum(sock, msg, jid, sender, args);
-    case 'ai':
-    case 'tanya':
-      return handleAI(sock, msg, sender, args);
     case 'spin':
       return handleSpin(sock, msg, sender, args);
     case 'tebak':
