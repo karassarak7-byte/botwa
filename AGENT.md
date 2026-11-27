@@ -25,7 +25,7 @@
 - Panggilan ke bot: panggilan pertama dibalas peringatan, berikutnya diblokir (rejectCall, updateBlockStatus).
 - Repo GitHub karassarak7-byte/botwa, branch main, AI auto backup aktif.
 - Known issues:
-  - Audio stiker video kadang hilang padahal video ada audio (belum diselesaikan). Nama publisher stiker video perlu sama dengan brat ("bot by nuzzelll") (belum dikerjakan).
+  - Audio stiker video kadang hilang di HP (belum ketemu penyebabnya; tes lokal 3 video sumber selalu ada audio). Stiker video sekarang dikirim lewat sendSoundSticker di index.js (bukan sendVideoAsSoundSticker library) dan sudah memakai nama pack/publisher "bot by nuzzelll" seperti brat.
   - Detektif belum ditambahkan, menunggu persetujuan.
   - !tt (TikTok tanpa watermark) dan !ytmp3 disetujui tapi belum dibuat. Rencana: tikwm (hdplay/play), @distube/ytdl-core + ffmpeg, yt-search.
   - Gangguan jaringan node (DNS EAI_AGAIN ke WA media, npm, Gemini, tikwm, youtube; koneksi WA putus 408/428). Bukan bug kode, sudah dilaporkan ke support KiosPanel.

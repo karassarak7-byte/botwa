@@ -1,6 +1,6 @@
 {
   "1670842970193@lid": {
-    "energy": 136,
+    "energy": 134,
     "lastClaim": 1795729326831,
     "createdAt": 1795676447707,
     "greeted": true
@@ -67,7 +67,7 @@
     "greeted": true
   },
   "53141697511457@lid": {
-    "energy": 94,
+    "energy": 91,
     "lastClaim": 0,
     "createdAt": 1795684074821
   },
@@ -193,7 +193,7 @@
     "createdAt": 1795705548876
   },
   "52214622072870@lid": {
-    "energy": 12,
+    "energy": 10,
     "lastClaim": 1795740661843,
     "createdAt": 1795706378063,
     "greeted": true
@@ -229,13 +229,13 @@
     "createdAt": 1795734056451
   },
   "195339541819574@lid": {
-    "energy": 15,
+    "energy": 12,
     "lastClaim": 1795741878564,
     "createdAt": 1795739954753,
     "greeted": true
   },
   "9633896857725@lid": {
-    "energy": 27,
+    "energy": 24,
     "lastClaim": 0,
     "createdAt": 1795741074051,
     "greeted": true
@@ -252,8 +252,8 @@
     "greeted": true
   },
   "141910064799911@lid": {
-    "energy": 27,
-    "lastClaim": 0,
+    "energy": 42,
+    "lastClaim": 1795742130363,
     "createdAt": 1795741896461,
     "greeted": true
   }
