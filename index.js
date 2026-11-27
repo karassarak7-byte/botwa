@@ -342,8 +342,8 @@ async function sendSoundSticker(sock, jid, video, quoted) {
   const full = lib.generateWAMessageFromContent(jid, { audioStickerMessage: { message: { stickerMessage } } }, {
     userJid: sock.user.id, quoted: quotedCopy,
   });
-  // type stanza harus "text": kalau "media" (default dari isi stiker), HP penerima bisa diam-diam membuang pesan atau audionya tidak diputar
-  await sock.relayMessage(jid, full.message, { messageId: full.key.id, additionalAttributes: { type: 'text' } });
+  // Sama seperti sendVideoAsSoundSticker di library (jalur yang diuji live): type stanza default (media), jangan dipaksa ke text
+  await sock.relayMessage(jid, full.message, { messageId: full.key.id });
 }
 
 async function handleBrat(sock, msg, jid, sender, args, cmd) {
