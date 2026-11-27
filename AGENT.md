@@ -1,16 +1,34 @@
 # Bot WA (bot-wa)
-- Entry: index.js (ESM, "type": "module"). Start: node index.js (MAIN_FILE=index.js). Panel image Node 25, port 10775 (PORT/SERVER_PORT).
-- File: database.js (users.json: energi, claim, spin, setEnergy, findUser, markGreeted, countCall, antrean tulis atomik), patch-fps.mjs (patch library sound sticker; jalankan setelah npm install), werewolf.js (lobi 60 detik +30 detik per join), tebakkata.js (sesi 5 menit), ai.js (cache grup + Gemini untuk !rangkum).
-- Paket: @xbibzlibrary/whatsbibz 2.1.0 (fork Baileys), qrcode, pino, sharp 0.32.6 (stiker brat). ffmpeg 5.1.9 di /usr/bin. Font DejaVu.
-- Install ulang: npm install, lalu node patch-fps.mjs.
+- Entry: index.js (ESM, "type": "module"). Start: node index.js (MAIN_FILE=index.js). Panel image Node 25, port 10775 (PORT/SERVER_PORT), listen 0.0.0.0.
 - Login: QR di terminal dan halaman http://IP:10775/. Session di folder auth.
-- makeWASocket: autoFollowChannel false. Pesan fromMe hanya diproses di self-chat. Grup dan chat orang lain diabaikan.
-- Perintah (prefix !): !menu/!help, !ping, !energi/!cek, !claim (+15, 1 jam), !sticker/!s (3 energi, refund jika gagal), !brat <teks> (2 energi, refund jika gagal, latar putih), !spin, !tebak, !jawab, !clue, !menyerah, !rangkum/!tldr [jumlah] (5 energi, grup saja, min 5, maks 30).
-- !ai/!tanya sudah DIHAPUS atas permintaan pengguna. Jangan dikembalikan kecuali diminta.
-- Stiker animasi WhatsApp maks 500 KiB. Patch-fps.mjs mengatur batas 500 KiB dan kualitas bertingkat. Video kompleks yang lebih dari 500 KiB tidak bergerak di HP, jadi jangan naikkan batas ini.
-- Pengendali: 6289692853559 (kebal jeda dan biaya sticker). Perintah !setenergi, !cekuser.
-- Panggilan ke bot: panggilan pertama dibalas peringatan, berikutnya diblokir.
-- Werewolf: !ww create/join/leave/start/status/stop, !vote, aksi malam via DM. Hadiah +20.
-- Energi awal 30, maks 150. Cooldown 2 detik per pengguna.
-- Gangguan jaringan node: DNS EAI_AGAIN (WA media, npm, Gemini, tikwm, youtube), koneksi WA sering putus 408. Bukan bug kode. Ke support KiosPanel.
-- Log [debug] di index.js masih aktif.
+- Install ulang: npm install, lalu node patch-fps.mjs (wajib, mengatur batas stiker video).
+- File:
+  - index.js: server HTTP (/ dan /qr.png), start() dengan makeWASocket (autoFollowChannel false), handleMessage (switch cmd), explainError, buildMenu, handleSticker, handleBrat, bratSticker, wrapText, addStickerExif, handleRangkum.
+  - database.js: users.json (energi, claim, spin, setEnergy, findUser, markGreeted, countCall, antrean tulis atomik).
+  - ai.js: cache grup + Gemini (gemini-2.5-flash, REST) untuk !rangkum. Memuat .env sendiri.
+  - werewolf.js: lobi 60 detik, +30 detik per join, konstanta LOBBY_MS, NIGHT_MS, DAY_MS, VOTE_MS, REWARD=20, MIN_PLAYERS=4.
+  - tebakkata.js: tebak kata, sesi 5 menit di memori.
+  - patch-fps.mjs: patch node_modules/@xbibzlibrary/whatsbibz/lib/Utils/sound-sticker.js (kualitas bertingkat, compression_level 2, SOUND_STICKER_MAX_SECONDS 10, batas WebP 500 KiB).
+  - fonts/: LiberationSans-Regular.ttf, LiberationSans-Bold.ttf (SIL OFL), fonts.conf. index.js set process.env.FONTCONFIG_FILE ke fonts.conf di baris awal.
+- Paket: @xbibzlibrary/whatsbibz 2.1.0 (fork Baileys), qrcode, pino (silent), sharp 0.32.6, ffmpeg 5.1.9 di /usr/bin. Library tidak punya helper EXIF.
+- Perintah (prefix !):
+  - !menu/!help, !ping, !energi/!cek, !claim (+15, tiap 1 jam), !spin, !tebak, !jawab, !clue, !menyerah.
+  - !sticker/!s (3 energi, refund jika gagal). Video dipotong 6 detik (STICKER_CUT_SECONDS), input maks 10 detik (STICKER_MAX_SECONDS).
+  - !brat <teks> (2 energi, maks 100 karakter, teks dari balasan juga boleh). Font Liberation Sans, BRAT_SX 0.8, BRAT_SY 1.3, latar putih, pixelated resize 64 lalu 512, blur 0.6. Nama pack dan publisher "bot by nuzzelll" lewat metadata EXIF (addStickerExif), bukan tulisan di gambar.
+  - !rangkum/!tldr [jumlah] (5 energi, grup saja, min 5, maks 30, refund jika gagal).
+  - !werewolf / !ww create/join/leave/start/status/stop, !vote, aksi malam via DM. Hadiah +20. Peran seer, doctor, vigilante, netral (jester, fool, serial) tidak boleh ganda. Netral mulai 6 pemain. Jumlah werewolf = floor(n/4), 1 Alpha mulai 8 pemain.
+- Dihapus atas permintaan, jangan dikembalikan kecuali diminta: !ai/!tanya, !nobg, !hitam, !hd, !bratwhite.
+- Stiker animasi WhatsApp maks 500 KiB. Jangan naikkan batas ini.
+- Energi: awal 30, maks 150, cooldown 2 detik per pengguna, batas input 2 MB.
+- Pengendali: 6289692853559 (kebal jeda dan biaya stiker). Perintah !setenergi <nomor> <0-150>, !cekuser <nomor>.
+- Chat pribadi: pesan fromMe hanya diproses di self-chat. Grup dan chat orang lain diabaikan untuk pesan dari bot sendiri. Sapaan otomatis untuk chat pribadi baru dan member baru grup.
+- Panggilan ke bot: panggilan pertama dibalas peringatan, berikutnya diblokir (rejectCall, updateBlockStatus).
+- Repo GitHub karassarak7-byte/botwa, branch main, AI auto backup aktif.
+- Known issues:
+  - Audio stiker video kadang hilang padahal video ada audio (belum diselesaikan). Nama publisher stiker video perlu sama dengan brat ("bot by nuzzelll") (belum dikerjakan).
+  - Detektif belum ditambahkan, menunggu persetujuan.
+  - !tt (TikTok tanpa watermark) dan !ytmp3 disetujui tapi belum dibuat. Rencana: tikwm (hdplay/play), @distube/ytdl-core + ffmpeg, yt-search.
+  - Gangguan jaringan node (DNS EAI_AGAIN ke WA media, npm, Gemini, tikwm, youtube; koneksi WA putus 408/428). Bukan bug kode, sudah dilaporkan ke support KiosPanel.
+  - Log [debug] di index.js masih aktif.
+  - npm audit: 1 high vulnerability, belum diperbaiki.
+  - Belum diuji: panggilan asli, Werewolf penuh, sapaan, !setenergi/!cekuser dari pengendali.

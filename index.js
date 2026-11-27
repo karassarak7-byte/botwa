@@ -68,7 +68,6 @@ const {
   DisconnectReason,
   downloadVideoForSoundSticker,
   downloadMediaMessage,
-  sendVideoAsSoundSticker,
 } = lib;
 const { getUser, spendEnergy, refundEnergy, claimEnergy, playSpin, setEnergy, findUser, addEnergy, MAX_ENERGY, CLAIM_COOLDOWN_MS } = db;
 
@@ -309,6 +308,27 @@ function addStickerExif(webp, packName, author, width, height) {
   return Buffer.concat([riff, body]);
 }
 
+// Kirim sound sticker (stiker animasi + audio) dengan metadata nama pack "bot by nuzzelll", sama seperti brat.
+async function sendSoundSticker(sock, jid, video, quoted) {
+  const converted = await lib.convertVideoToSoundSticker(video, { timeoutMs: 60000 });
+  const webp = addStickerExif(converted.sticker, BRAT_WATERMARK, BRAT_WATERMARK, 512, 512);
+  const { stickerMessage } = await lib.prepareWAMessageMedia({
+    sticker: webp, mimetype: 'image/webp', width: 512, height: 512, isAnimated: true,
+  }, { upload: sock.waUploadToServer });
+  const { audioMessage } = await lib.prepareWAMessageMedia({
+    audio: converted.audio, mimetype: 'audio/ogg; codecs=opus', seconds: converted.seconds, ptt: false,
+  }, { upload: sock.waUploadToServer });
+  if (!stickerMessage?.directPath || !audioMessage?.directPath) throw Object.assign(new Error('upload gagal'), { code: 'UPLOAD_FAILED' });
+  stickerMessage.audioMessage = audioMessage;
+  const quotedCopy = quoted
+    ? lib.proto.WebMessageInfo.decode(lib.proto.WebMessageInfo.encode(lib.proto.WebMessageInfo.fromObject(quoted)).finish())
+    : undefined;
+  const full = lib.generateWAMessageFromContent(jid, { audioStickerMessage: { message: { stickerMessage } } }, {
+    userJid: sock.user.id, quoted: quotedCopy,
+  });
+  await sock.relayMessage(jid, full.message, { messageId: full.key.id });
+}
+
 async function handleBrat(sock, msg, jid, sender, args, cmd) {
   const ctx = msg.message.extendedTextMessage?.contextInfo?.quotedMessage;
   const quotedText = ctx?.conversation || ctx?.extendedTextMessage?.text || '';
@@ -409,7 +429,7 @@ async function handleSticker(sock, msg, jid, sender, owner) {
     const buffer = await downloadVideoForSoundSticker(msg, { timeoutMs: 60000 });
     if (buffer.length > STICKER_MAX_INPUT_BYTES) throw Object.assign(new Error('video terlalu besar'), { code: 'TOO_BIG' });
     const square = await cropSquareVideo(buffer);
-    await sendVideoAsSoundSticker(sock, jid, square, { quoted: msg, startSeconds: 0, timeoutMs: 60000 });
+    await sendSoundSticker(sock, jid, square, msg);
     console.log(`Sound sticker terkirim ke ${sender}`);
   } catch (e) {
     console.error('Sticker gagal:', e?.code, e?.message);
