@@ -237,6 +237,7 @@ function wrapText(text, fontSize, maxWidth) {
 // lalu dibuat pixelated dan sedikit blur. Ukuran font diturunkan sampai muat di kanvas 512x512.
 const BRAT_SX = 0.8;  // lebar huruf (lebih sempit)
 const BRAT_SY = 1.3;  // tinggi huruf (diregangkan ke atas)
+const BRAT_WATERMARK = 'bot by nuzzelll';  // tulisan wm di stiker brat
 async function bratSticker(text, background) {
   const size = 512, pad = 36, maxW = size - pad * 2;
   let fontSize = 36, lines = [];
@@ -253,13 +254,17 @@ async function bratSticker(text, background) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
 <rect width="100%" height="100%" fill="${background}"/>
 <g font-family="Liberation Sans, Arial, Helvetica, sans-serif" fill="#000000">${tspans}</g></svg>`;
-  // Pixelated: turunkan ke 96 px, lalu naikkan lagi dengan nearest supaya kotak-kotak terlihat
-  return sharp(Buffer.from(svg))
-    .resize(96, 96)
+  // Pixelated: turunkan ke 64 px, lalu naikkan lagi dengan nearest supaya kotak-kotak terlihat
+  const base = await sharp(Buffer.from(svg))
+    .resize(64, 64)
     .resize(size, size, { kernel: sharp.kernel.nearest })
     .blur(0.6)
-    .webp()
+    .png()
     .toBuffer();
+  // Watermark tulisan kecil di pojok kanan bawah (digambar setelah pixelated supaya tetap terbaca)
+  const wm = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+<text x="${size - 12}" y="${size - 10}" text-anchor="end" font-family="Liberation Sans, Arial, sans-serif" font-size="18" font-weight="700" fill="#000000">${BRAT_WATERMARK}</text></svg>`);
+  return sharp(base).composite([{ input: wm, top: 0, left: 0 }]).webp().toBuffer();
 }
 
 async function handleBrat(sock, msg, jid, sender, args, cmd) {
