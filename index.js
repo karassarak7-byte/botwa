@@ -261,10 +261,52 @@ async function bratSticker(text, background) {
     .blur(0.6)
     .png()
     .toBuffer();
-  // Watermark tulisan kecil di pojok kanan bawah (digambar setelah pixelated supaya tetap terbaca)
-  const wm = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
-<text x="${size - 12}" y="${size - 10}" text-anchor="end" font-family="Liberation Sans, Arial, sans-serif" font-size="18" font-weight="700" fill="#000000">${BRAT_WATERMARK}</text></svg>`);
-  return sharp(base).composite([{ input: wm, top: 0, left: 0 }]).webp().toBuffer();
+  // Nama pack dan publisher disimpan sebagai metadata WebP (EXIF), muncul saat stiker disimpan
+  const webp = await sharp(base).webp().toBuffer();
+  return addStickerExif(webp, BRAT_WATERMARK, BRAT_WATERMARK, size, size);
+}
+
+// Tambah metadata WhatsApp (EXIF chunk berisi nama pack dan publisher) ke file WebP
+function addStickerExif(webp, packName, author, width, height) {
+  const json = Buffer.from(JSON.stringify({
+    'sticker-pack-id': `brat-${Date.now()}`,
+    'sticker-pack-name': packName,
+    'sticker-pack-publisher': author,
+    emojis: ['🎨'],
+  }));
+  const head = Buffer.from([0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x57, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00]);
+  head.writeUInt32LE(json.length, 14);
+  const exif = Buffer.concat([head, json]);
+  // Pecah chunk WebP yang sudah ada
+  const chunks = [];
+  for (let p = 12; p + 8 <= webp.length; ) {
+    const len = webp.readUInt32LE(p + 4);
+    chunks.push({ type: webp.toString('ascii', p, p + 4), data: webp.subarray(p + 8, p + 8 + len) });
+    p += 8 + len + (len % 2);
+  }
+  // Header VP8X: bit EXIF (0x08) dan alpha (0x10) dinyalakan
+  const old = chunks.find((c) => c.type === 'VP8X');
+  let vp8x;
+  if (old) { vp8x = Buffer.from(old.data); vp8x[0] |= 0x08; }
+  else {
+    vp8x = Buffer.alloc(10);
+    vp8x[0] = 0x18;
+    vp8x.writeUIntLE(width - 1, 4, 3);
+    vp8x.writeUIntLE(height - 1, 7, 3);
+  }
+  const rest = chunks.filter((c) => c.type !== 'VP8X' && c.type !== 'EXIF');
+  const all = [{ type: 'VP8X', data: vp8x }, ...rest, { type: 'EXIF', data: exif }];
+  const parts = all.map((c) => {
+    const hdr = Buffer.alloc(8);
+    hdr.write(c.type, 0, 'ascii');
+    hdr.writeUInt32LE(c.data.length, 4);
+    return Buffer.concat([hdr, c.data, c.data.length % 2 ? Buffer.alloc(1) : Buffer.alloc(0)]);
+  });
+  const body = Buffer.concat([Buffer.from('WEBP'), ...parts]);
+  const riff = Buffer.alloc(8);
+  riff.write('RIFF', 0, 'ascii');
+  riff.writeUInt32LE(body.length, 4);
+  return Buffer.concat([riff, body]);
 }
 
 async function handleBrat(sock, msg, jid, sender, args, cmd) {
