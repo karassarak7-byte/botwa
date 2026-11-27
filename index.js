@@ -54,6 +54,8 @@ async function cropSquareVideo(input) {
   }
 }
 
+// Font Liberation Sans (metrik sama dengan Arial) dari folder fonts/, dibaca fontconfig untuk stiker brat
+process.env.FONTCONFIG_FILE = new URL('./fonts/fonts.conf', import.meta.url).pathname;
 const sharp = (await import('sharp')).default;
 const lib = await import('@xbibzlibrary/whatsbibz');
 const pino = (await import('pino')).default;
@@ -230,24 +232,33 @@ function wrapText(text, fontSize, maxWidth) {
   return lines;
 }
 
-// Teks rata kiri, ukuran font diturunkan sampai muat di kanvas 512x512
+// Teks rata kiri gaya brat: font Arial-like (Liberation Sans Bold), diregangkan vertikal,
+// lalu dibuat pixelated dan sedikit blur. Ukuran font diturunkan sampai muat di kanvas 512x512.
+const BRAT_SX = 0.8;  // lebar huruf (lebih sempit)
+const BRAT_SY = 1.3;  // tinggi huruf (diregangkan ke atas)
 async function bratSticker(text, background) {
   const size = 512, pad = 36, maxW = size - pad * 2;
-  let fontSize = 120, lines = [];
+  let fontSize = 36, lines = [];
   for (let fs = 120; fs >= 36; fs -= 4) {
     const l = wrapText(text, fs, maxW);
-    if (l.length * fs * 1.05 <= maxW) { fontSize = fs; lines = l; break; }
-    lines = l;
+    fontSize = fs; lines = l;
+    if (l.length * fs * 1.05 * BRAT_SY <= maxW) break;
   }
-  const lineH = fontSize * 1.05;
-  const startY = (size - lines.length * lineH) / 2 + fontSize * 0.85;
+  const lineH = fontSize * 1.05 * BRAT_SY;
+  const top = (size - lines.length * lineH) / 2;
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const tspans = lines.map((l, i) =>
-    `<text x="${pad}" y="${startY + i * lineH}" font-size="${fontSize}" font-weight="700">${esc(l)}</text>`).join('');
+    `<text x="0" y="0" transform="translate(${pad} ${top + fontSize * 0.9 * BRAT_SY + i * lineH}) scale(${BRAT_SX} ${BRAT_SY})" font-size="${fontSize}" font-weight="700">${esc(l)}</text>`).join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
 <rect width="100%" height="100%" fill="${background}"/>
-<g font-family="Arial, Helvetica, sans-serif" fill="#000000">${tspans}</g></svg>`;
-  return sharp(Buffer.from(svg)).blur(1).webp().toBuffer();
+<g font-family="Liberation Sans, Arial, Helvetica, sans-serif" fill="#000000">${tspans}</g></svg>`;
+  // Pixelated: turunkan ke 256 px, lalu naikkan lagi dengan nearest supaya kotak-kotak terlihat
+  return sharp(Buffer.from(svg))
+    .resize(256, 256)
+    .resize(size, size, { kernel: sharp.kernel.nearest })
+    .blur(0.6)
+    .webp()
+    .toBuffer();
 }
 
 async function handleBrat(sock, msg, jid, sender, args, cmd) {
